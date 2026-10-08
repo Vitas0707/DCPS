@@ -21,7 +21,6 @@
 #define CAL ((uint16_t)(0.00512f / (CURRENT_LSB * RSENSE)))
 
 
-
 static HAL_StatusTypeDef INA226_wirtereg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint16_t value) {
     uint8_t data[2];
     data[1] = (value >> 8) & 0xFF; // MSB
