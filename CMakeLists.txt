@@ -47,6 +47,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     ${PROJECT_SOURCE_DIR}/Hardware/FSBB/FSBB.c
     ${PROJECT_SOURCE_DIR}/Hardware/INA226/INA226.c
+    ${PROJECT_SOURCE_DIR}/Hardware/HOST/host.c
 )
 
 # Add include paths
@@ -54,6 +55,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ${PROJECT_SOURCE_DIR}/Hardware/FSBB
     ${PROJECT_SOURCE_DIR}/Hardware/INA226
+    ${PROJECT_SOURCE_DIR}/Hardware/HOST
 )
 
 # Add project symbols (macros)
