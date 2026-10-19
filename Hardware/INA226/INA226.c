@@ -37,11 +37,8 @@ extern OPAMP_HandleTypeDef hopamp2;
 #define RATIO ((10.0f) / (10.0f + 100.0f)) // 分压比
 #define ADC_VREF 2.5f                      // ADC参考电压
 #define ADC_RESOLUTION 4096.0f             // 12位ADC分辨率
+#define ADC_SCALE (ADC_VREF/ADC_RESOLUTION/RATIO) // ADC转换比例
 
-uint16_t adc_rawvalues[2];
-float input_voltage = 0.0f;
-float output_voltage = 0.0f;
-float vref_voltage = 0.0f;
 
 //==========INA226驱动代码==========
 static HAL_StatusTypeDef INA226_wirtereg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint16_t value) {
@@ -134,7 +131,7 @@ uint8_t adc_start(void) {
     if(HAL_OPAMP_Start(&hopamp1) != HAL_OK || HAL_OPAMP_Start(&hopamp2) != HAL_OK) {
         return 2; // OPAMP开启失败
     }
-    if ((HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_rawvalues, 2) != HAL_OK)||(HAL_ADC_Start(&hadc2) != HAL_OK)) {
+    if ((HAL_ADC_Start(&hadc1) != HAL_OK)||(HAL_ADC_Start(&hadc2) != HAL_OK)) {
         return 3; // ADC开启失败
     }
     return 0; // 初始化成功
@@ -142,7 +139,8 @@ uint8_t adc_start(void) {
 
 float adc_getvoltageoutput_v(void) {
   if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
-    float output_voltage = (float)adc_rawvalues[0] * (ADC_VREF / ADC_RESOLUTION); // Convert to Volts
+    uint16_t rawdata = HAL_ADC_GetValue(&hadc1);
+    float output_voltage = (float)rawdata *ADC_SCALE; // Convert to Volts
     return output_voltage;
   }
   else {
@@ -152,19 +150,10 @@ float adc_getvoltageoutput_v(void) {
 float adc_getvoltageinput_v(void) {
   if (HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY) == HAL_OK) {
     uint16_t rawdata = HAL_ADC_GetValue(&hadc2);
-    float input_voltage = (float)rawdata * (ADC_VREF / ADC_RESOLUTION); // Convert to Volts
+    float input_voltage = (float)rawdata * ADC_SCALE; // Convert to Volts
     return input_voltage;
   }
   else {
     return -1.0f; // Error
   }
-}
-float adc_getvref_v(void) {
-  if (HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY) == HAL_OK) {
-    float vref_voltage = (float)adc_rawvalues[1] * (ADC_VREF / ADC_RESOLUTION); // Convert to Volts
-    return vref_voltage;
-    }
-    else{
-      return -1.0f; // Error
-    }
 }

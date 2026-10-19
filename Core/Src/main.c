@@ -29,6 +29,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "INA226.h"
+#include "FSBB.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,7 +50,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+float input_voltage = 0.0f;
+float output_voltage = 0.0f;
+float current = 0.0f;
+float power = 0.0f;
+float bus_voltage = 0.0f;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -100,8 +105,16 @@ int main(void)
   MX_OPAMP2_Init();
   MX_TIM8_Init();
   MX_USART2_UART_Init();
+  MX_TIM3_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   ina226_init();
+  adc_start();
+
+  __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
+  HAL_TIM_Base_Start_IT(&htim3);
+
+  fsbb_debugon();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -165,7 +178,15 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  if (htim->Instance == TIM3) {
+    output_voltage = adc_getvoltageoutput_v();
+    input_voltage = adc_getvoltageinput_v();
+    current = ina226_getcurrent_A();
+    power = ina226_calpower_W();
+    bus_voltage = ina226_getbusvoltage_V();
+  }
+}
 /* USER CODE END 4 */
 
 /**
