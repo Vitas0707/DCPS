@@ -50,11 +50,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-float input_voltage = 0.0f;
-float output_voltage = 0.0f;
-float current = 0.0f;
-float power = 0.0f;
-float bus_voltage = 0.0f;
+volatile float input_voltage = 0.0f;
+volatile float output_voltage = 0.0f;
+volatile float current = 0.0f;
+volatile float power = 0.0f;
+volatile float bus_voltage = 0.0f;
+uint8_t measure_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -119,8 +120,15 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
+    if (measure_flag == 1) {
+      output_voltage = adc_getvoltageoutput_v();
+      input_voltage = adc_getvoltageinput_v();
+      current = ina226_getcurrent_A();
+      bus_voltage = ina226_getbusvoltage_V();
+      power = current * bus_voltage;
+      measure_flag = 0;
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -180,11 +188,7 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim->Instance == TIM3) {
-    output_voltage = adc_getvoltageoutput_v();
-    input_voltage = adc_getvoltageinput_v();
-    current = ina226_getcurrent_A();
-    power = ina226_calpower_W();
-    bus_voltage = ina226_getbusvoltage_V();
+    measure_flag = 1;
   }
 }
 /* USER CODE END 4 */

@@ -37,14 +37,15 @@ extern OPAMP_HandleTypeDef hopamp2;
 #define RATIO ((10.0f) / (10.0f + 100.0f)) // 分压比
 #define ADC_VREF 2.5f                      // ADC参考电压
 #define ADC_RESOLUTION 4096.0f             // 12位ADC分辨率
-#define ADC_SCALE (ADC_VREF/ADC_RESOLUTION/RATIO) // ADC转换比例
+#define ADC_SCALE (ADC_VREF / ADC_RESOLUTION / RATIO) // ADC转换比例
+#define ADC_TIMEOUT 10
 
 
 //==========INA226驱动代码==========
 static HAL_StatusTypeDef INA226_wirtereg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint16_t value) {
     uint8_t data[2];
-    data[1] = (value >> 8) & 0xFF; // MSB
-    data[2] = value & 0xFF;        // LSB
+    data[0] = (value >> 8) & 0xFF; // MSB
+    data[1] = value & 0xFF;        // LSB
 
     return HAL_I2C_Mem_Write(hi2c, INA226_WRITE_ADDRESS, reg, 1, data, 2, INA226_I2C_TIMEOUT);
 }
@@ -54,6 +55,9 @@ static HAL_StatusTypeDef INA226_readreg(I2C_HandleTypeDef *hi2c, uint8_t reg, ui
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(hi2c, INA226_READ_ADDRESS, reg, 1, data, 2, INA226_I2C_TIMEOUT);
     if (status == HAL_OK) {
         *value = (data[0] << 8) | data[1]; // Combine MSB and LSB
+    }
+    else {
+        *value = 0;
     }
     return status;
 }
@@ -70,42 +74,50 @@ uint8_t ina226_init() {
     return 0;
 }
 
-static uint16_t ina226_ReadShuntVoltage() {
+static int16_t ina226_ReadShuntVoltage() {
     uint16_t value;
-    INA226_readreg(INA226_IIC_HANDLEPTR, REG_SHUNT_VOLT, &value);
-    return value;
+    if(INA226_readreg(INA226_IIC_HANDLEPTR, REG_SHUNT_VOLT, &value) != HAL_OK) {
+        return 0;
+    }
+    return (int16_t)value;
 }
 
 static uint16_t ina226_ReadBusVoltage() {
     uint16_t value;
-    INA226_readreg(INA226_IIC_HANDLEPTR, REG_BUS_VOLT, &value);
+    if(INA226_readreg(INA226_IIC_HANDLEPTR, REG_BUS_VOLT, &value) != HAL_OK) {
+        return 0;
+    }
     return value;
 }
 
-static uint16_t ina226_ReadCurrent() {
+static int16_t ina226_ReadCurrent() {
     uint16_t value;
-    INA226_readreg(INA226_IIC_HANDLEPTR, REG_CURRENT, &value);
-    return value;
+    if(INA226_readreg(INA226_IIC_HANDLEPTR, REG_CURRENT, &value) != HAL_OK) {
+        return 0;
+    }
+    return (int16_t)value;
 }
 
-static uint16_t ina226_ReadPower() {
+static int16_t ina226_ReadPower() {
     uint16_t value;
-    INA226_readreg(INA226_IIC_HANDLEPTR, REG_POWER, &value);
-    return value;
+    if(INA226_readreg(INA226_IIC_HANDLEPTR, REG_POWER, &value) != HAL_OK) {
+        return 0;
+    }
+    return (int16_t)value;
 }
 
 float ina226_getcurrent_A() {
-    uint16_t raw_current = ina226_ReadCurrent();
+    int16_t raw_current = ina226_ReadCurrent();
     return (float)raw_current * CURRENT_LSB; // Convert to Amperes
 }
 
 float ina226_getshuntvoltage_V() {
-    uint16_t raw_shunt_voltage = ina226_ReadShuntVoltage();
+    int16_t raw_shunt_voltage = ina226_ReadShuntVoltage();
     return (float)raw_shunt_voltage * 2.5e-6f; // Convert to Volts fixed LSB value 2.5uV
 }
 
 float ina226_getpower_W() {
-    uint16_t raw_power = ina226_ReadPower();
+    int16_t raw_power = ina226_ReadPower();
     return (float)raw_power * CURRENT_LSB * 25.0f; // Convert to Watts
 }
 
@@ -138,7 +150,7 @@ uint8_t adc_start(void) {
 }
 
 float adc_getvoltageoutput_v(void) {
-  if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
+  if (HAL_ADC_PollForConversion(&hadc1, ADC_TIMEOUT) == HAL_OK) {
     uint16_t rawdata = HAL_ADC_GetValue(&hadc1);
     float output_voltage = (float)rawdata *ADC_SCALE; // Convert to Volts
     return output_voltage;
@@ -148,7 +160,7 @@ float adc_getvoltageoutput_v(void) {
   }
 }
 float adc_getvoltageinput_v(void) {
-  if (HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY) == HAL_OK) {
+  if (HAL_ADC_PollForConversion(&hadc2, ADC_TIMEOUT) == HAL_OK) {
     uint16_t rawdata = HAL_ADC_GetValue(&hadc2);
     float input_voltage = (float)rawdata * ADC_SCALE; // Convert to Volts
     return input_voltage;
