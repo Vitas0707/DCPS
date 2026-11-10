@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2026 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -28,8 +28,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "INA226.h"
 #include "FSBB.h"
+#include "INA226.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,7 +55,6 @@ volatile float input_voltage = 0.0f;
 volatile float output_voltage = 0.0f;
 volatile float current = 0.0f;
 volatile float power = 0.0f;
-volatile float bus_voltage = 0.0f;
 uint8_t measure_flag = 0;
 /* USER CODE END PV */
 
@@ -112,10 +112,11 @@ int main(void)
   ina226_init();
   adc_start();
 
+  fsbb_init();
+
   __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
   HAL_TIM_Base_Start_IT(&htim3);
 
-  fsbb_debugon();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -125,8 +126,8 @@ int main(void)
       output_voltage = adc_getvoltageoutput_v();
       input_voltage = adc_getvoltageinput_v();
       current = ina226_getcurrent_A();
-      bus_voltage = ina226_getbusvoltage_V();
-      power = current * bus_voltage;
+      power = current * output_voltage;
+      fsbb_run();
       measure_flag = 0;
     }
     /* USER CODE END WHILE */
@@ -202,8 +203,7 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1)
-  {
+  while (1) {
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -218,8 +218,9 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* User can add his own implementation to report the file name and line
+     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
+     line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

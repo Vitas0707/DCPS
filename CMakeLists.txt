@@ -46,6 +46,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     ${PROJECT_SOURCE_DIR}/Hardware/FSBB/FSBB.c
+    ${PROJECT_SOURCE_DIR}/Hardware/FSBB/DCPS_model.c
     ${PROJECT_SOURCE_DIR}/Hardware/INA226/INA226.c
     ${PROJECT_SOURCE_DIR}/Hardware/HOST/host.c
 )
