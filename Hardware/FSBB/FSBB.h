@@ -3,7 +3,8 @@
 
 typedef enum {
   MODE_CC = 0,
-  MODE_CV = 1
+  MODE_CV = 1,
+  MODE_STOP
 } fsbb_mode_t;
 
 void fsbb_debugon(void);

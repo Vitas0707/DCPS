@@ -12,6 +12,7 @@
 #define BOOST_TIM_CHANNEL TIM_CHANNEL_2
 
 #define ALWAYS_ON_DUTY 0.99f
+#define FF_DELTA_MAX 0.3f
 
 extern volatile float input_voltage;
 extern volatile float output_voltage;
@@ -83,28 +84,47 @@ void fsbb_init(void) {
   DCPS_model_initialize();
   fsbb_mode = MODE_CV;
   DCPS_model_U.state = fsbb_mode;
-  DCPS_model_U.V_target = 12.0f;
+  DCPS_model_U.V_target = 5.0f;
   DCPS_model_U.I_target = 1.0f;
 }
 
 void fsbb_run(void) {
   float ctrl_duty;
+  float d_ff;
+  float delta;
+  float duty;
   float buck_duty;
   float boost_duty;
+  float vin = input_voltage;
+  float vt = DCPS_model_U.V_target;
 
   DCPS_model_U.V_value = output_voltage;
   DCPS_model_U.I_value = current;
 
   DCPS_model_step();
 
-  ctrl_duty = ((int32_t)DCPS_model_U.state == 1)? DCPS_model_Y.duty[0]: DCPS_model_Y.duty[1];
+  ctrl_duty = ((int32_t)DCPS_model_U.state == 1) ? DCPS_model_Y.duty[0]: DCPS_model_Y.duty[1];
 
-  if (DCPS_model_U.V_target <= input_voltage) {
-    buck_duty = ctrl_duty;
+  if (vt <= vin) {
+    d_ff = (vin > 0.1f) ? (vt / vin) : 0.5f;
+  } else {
+    d_ff = (vt > 0.1f) ? (1.0f - vin / vt) : 0.5f;
+  }
+
+  delta = ctrl_duty - d_ff;
+  if (delta > FF_DELTA_MAX) {
+    delta = FF_DELTA_MAX;
+  } else if (delta < -FF_DELTA_MAX) {
+    delta = -FF_DELTA_MAX;
+  }
+  duty = d_ff + delta;
+
+  if (vt <= vin) {
+    buck_duty = duty;
     boost_duty = ALWAYS_ON_DUTY;
   } else {
     buck_duty = ALWAYS_ON_DUTY;
-    boost_duty = ctrl_duty;
+    boost_duty = duty;
   }
 
   fsbb_start(buck_duty, boost_duty);

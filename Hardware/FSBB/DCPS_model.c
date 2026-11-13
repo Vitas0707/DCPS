@@ -197,12 +197,12 @@ void DCPS_model_step(void)
 /* Model initialize function */
 void DCPS_model_initialize(void)
 {
-  DCPS_model_DW.V_Kd = 0.1f;
-  DCPS_model_DW.V_Ki = 1.0f;
-  DCPS_model_DW.V_Kp = 5.0f;
-  DCPS_model_DW.I_Kp = 5.0f;
-  DCPS_model_DW.I_Ki = 1.0f;
-  DCPS_model_DW.I_Kd = 0.1f;
+  DCPS_model_DW.V_Kd = 0.02f;
+  DCPS_model_DW.V_Ki = 1.7f;
+  DCPS_model_DW.V_Kp = 5.4f;
+  DCPS_model_DW.I_Kp = 4.3f;
+  DCPS_model_DW.I_Ki = 1.5f;
+  DCPS_model_DW.I_Kd = 0.17f;
   DCPS_model_DW.Filter_DSTATE_d = 0.0f;
   DCPS_model_DW.Integrator_DSTATE_p = 0.0f;
   DCPS_model_DW.Filter_DSTATE = 0.0f;
